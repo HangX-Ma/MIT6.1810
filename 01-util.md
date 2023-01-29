@@ -1,15 +1,15 @@
 # Lab1: Xv6 and Unix utilities
 
-This lab will familiarize you with xv6 and its system calls.
-
 :penguin: **ALL ASSIGNMENTS HAVE PASSED THE TESTS** :white_check_mark:
+
+This lab will familiarize you with xv6 and its system calls.
 
 ## 1. sleep (easy)
 
 Read the recommended files following the guide and you will benefits from them.
 Don't forget to find `UPROGS` and add your program at the bottom in `Makefile`.
 
-### `user/sleep.c`
+### _user/sleep.c_
 
 ```c
 #include "kernel/types.h"
@@ -37,7 +37,7 @@ main(int argc, char *argv[])
 
 _If no data is available, a `read` on a pipe will wait for either data to be written or for all file descriptors referring to the `write` end to be closed._ [page16, book-risc-rev3.pdf](book-riscv-rev3.pdf).
 
-### `user/pingpong.c`
+### _user/pingpong.c_
 
 ```c
 #include "kernel/types.h"
@@ -98,7 +98,7 @@ main(void)
 
 The process gets data from its left neighbors, which means we need to write the processed data to child `read` pipe so that the child process can deal with them separately.
 
-### `user/primes.c`
+### _user/primes.c_
 
 ```c
 #include "kernel/types.h"
@@ -193,7 +193,7 @@ Copy the main part of `ls` function in `user/ls.c`. If you fully understand the 
   - If the item is `T_DIR`, we recurse into this directory.
   - If the item is `T_FILE`, we compare its name with target file name.
 
-### `user/find.c`
+### _user/find.c_
 
 ```c
 #include "kernel/types.h"
@@ -287,7 +287,7 @@ At **chapter1, page 12**, the author gives an example of `exec` usage. Therefore
 
 I originally have a wishful thinking that I need to combine the pipe input all together. Actually, the `xargs` handles pipe input read from each line with its own command arguments.
 
-### `user/xargs.c`
+### _user/xargs.c_
 
 ```c
 #include "kernel/types.h"

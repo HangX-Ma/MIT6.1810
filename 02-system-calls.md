@@ -1,5 +1,7 @@
 # Lab2: system calls
 
+:penguin: **ALL ASSIGNMENTS HAVE PASSED THE TESTS** :white_check_mark:
+
 In this lab you will add some new system calls to xv6, which will help you understand how they work and will expose you to some of the internals of the xv6 kernel. Remember read Chapter 2 of [book-riscv-rev3](book-riscv-rev3.pdf) and Section 4.3 and 4.4 of Chapter 4 before start.
 
 ## 1. Using gdb (easy)
@@ -155,14 +157,14 @@ This assignment needs to add a system call tracing feature. The hints will guide
 - An array of syscall names need to follow the definition order in `kernel/syscall.h`.
 - The 'mask' provided as an argument for `trace` syscall is actually regarded as a group of buttons. `1` means tracing, otherwise not.
 
-### `kernel/syscall.h`
+### 2.1 _kernel/syscall.h_
 
 ```c
 ...
 #define SYS_trace  22
 ```
 
-### `kernel/syscall.c`
+### 2.2 _kernel/syscall.c
 
 Add all syscall names appearing in `kernel/syscall.h` and add `sys_trace` elements. Modify the `syscall` function to print out essential information.
 
@@ -210,7 +212,7 @@ syscall(void)
 }
 ```
 
-### `kernel/sysproc.c`
+### 2.3 _kernel/sysproc.c_
 
 ```c
 // store the traced syscall mask
@@ -227,7 +229,7 @@ sys_trace(void)
 }
 ```
 
-### `kernel/proc.h`
+### 2.4 _kernel/proc.h_
 
 ```c
 struct proc {
@@ -238,7 +240,7 @@ struct proc {
 };
 ```
 
-### `kernel/proc.c`
+### 2.5 _kernel/proc.c_
 
 ```c
 // Create a new process, copying the parent.
@@ -257,7 +259,7 @@ fork(void)
 }
 ```
 
-### `user/user.h`
+### 2.6 _user/user.h_
 
 ```c
 // system calls
@@ -266,10 +268,88 @@ int uptime(void);
 int trace(int);
 ```
 
-### `usys.pl`
+### 2.7 _usys.pl_
 
 ```c
 ...
 entry("uptime");
 entry("trace");
+```
+
+## 3. Sysinfo (moderate)
+
+The fundamental modifications applied for new syscall is similar to preceding assignment. One exception is that `get_freemem()` and `get_nproc()` declarations needs to be written into _kernel/defs.h_.
+
+### 3.1 _kernel/kalloc.c_
+
+`get_freemem()` refers to `kalloc()`, utilizing the memory `freelist` to calculate the remaining pages. So don't forget to multiply the PAGE_SIZE with the count and get the total free space bytes.
+
+```c
+// get free memory page count
+uint64
+get_freemem(void)
+{
+  uint64 freemem_count;
+  struct run *r;
+
+  freemem_count = 0;
+  acquire(&kmem.lock);
+  r = kmem.freelist;
+  while(r) {
+    r = r->next;
+    freemem_count++;
+  }
+  release(&kmem.lock);
+
+  return freemem_count * 4096;
+}
+```
+
+### 3.2 _kernel/proc.c_
+
+`get_nproc()` refers to `wakeup()`.
+
+```c
+// get UNUSED process number
+int
+get_nproc(void)
+{
+  int nproc;
+  struct proc *p;
+
+  nproc = 0;
+  for(p = proc; p < &proc[NPROC]; p++) {
+    acquire(&p->lock);
+    if(p->state != UNUSED) {
+      nproc++;
+    }
+    release(&p->lock);
+  }
+
+  return nproc;
+}
+```
+
+### 3.3 _kernel/sysproc.c_
+
+You need to look into the `sys_fstat()` (_kernel/sysfile.c_) and `filestat()` (_kernel/file.c_). Remember the arguments passing in assembly through register `a0-a7` in RISC-V.
+
+```c
+uint64
+sys_sysinfo(void)
+{
+  struct sysinfo sysinfo;
+  struct proc *p = myproc();
+  uint64 addr; // user pointer to struct sysinfo
+
+  argaddr(0, &addr);
+
+  sysinfo.freemem = get_freemem();
+  sysinfo.nproc = get_nproc();
+
+  if(copyout(p->pagetable, addr, (char *)&sysinfo, sizeof(sysinfo)) < 0) {
+    return -1;
+  }
+  return 0;
+}
 ```
