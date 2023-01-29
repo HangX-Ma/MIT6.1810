@@ -2,6 +2,8 @@
 
 This lab will familiarize you with xv6 and its system calls.
 
+:penguin: **ALL ASSIGNMENTS HAVE PASSED THE TESTS** :white_check_mark:
+
 ## 1. sleep (easy)
 
 Read the recommended files following the guide and you will benefits from them.

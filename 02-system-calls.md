@@ -35,6 +35,8 @@ This is free software: you are free to change and redistribute it.
 There is NO WARRANTY, to the extent permitted by law.
 ```
 
+### GDB Test
+
 If you solved the problem following the guidance and hints, you can get the following output on terminal. Run `target remote localhost:26000` first if gdb runs correctly.
 
 ```shell
@@ -143,3 +145,131 @@ determining executable automatically.  Try using the "file" command.
 
     - `p p->name` prints `"initcode\000\000\000\000\000\000\000"`.
     - `p p->pid` prints `1`.
+
+## 2. System call tracing (moderate)
+
+This assignment needs to add a system call tracing feature. The hints will guide you complete a majority of tasks.
+
+### Notice
+
+- An array of syscall names need to follow the definition order in `kernel/syscall.h`.
+- The 'mask' provided as an argument for `trace` syscall is actually regarded as a group of buttons. `1` means tracing, otherwise not.
+
+### `kernel/syscall.h`
+
+```c
+...
+#define SYS_trace  22
+```
+
+### `kernel/syscall.c`
+
+Add all syscall names appearing in `kernel/syscall.h` and add `sys_trace` elements. Modify the `syscall` function to print out essential information.
+
+```c
+...
+extern uint64 sys_trace(void);
+
+// An array mapping syscall numbers from syscall.h
+// to the function that handles the system call.
+static uint64 (*syscalls[])(void) = {
+    ...
+    [SYS_trace]   sys_trace,
+}
+
+static char* syscall_name[22] = {
+  "fork", "exit", "wait", "pipe", "read",
+  "kill", "exec", "fstat", "chdir", "dup",
+  "getpid", "sbrk", "sleep", "uptime", "open",
+  "write", "mknod", "unlink", "link", "mkdir",
+  "close", "trace",
+};
+
+void
+syscall(void)
+{
+  int num;
+  struct proc *p = myproc();
+
+  num = p->trapframe->a7;
+  if(num > 0 && num < NELEM(syscalls) && syscalls[num]) {
+    // Use num to lookup the system call function for num, call it,
+    // and store its return value in p->trapframe->a0
+    p->trapframe->a0 = syscalls[num]();
+    /* Check whether the specific syscall is traced or not */
+    int maskbit = (p->traced_mask & (1 << num)) >> num;
+    if (maskbit) {
+      printf("%d: syscall %s -> %d\n", 
+              p->pid, syscall_name[num - 1], p->trapframe->a0);
+    }
+  } else {
+    printf("%d %s: unknown sys call %d\n",
+            p->pid, p->name, num);
+    p->trapframe->a0 = -1;
+  }
+}
+```
+
+### `kernel/sysproc.c`
+
+```c
+// store the traced syscall mask
+uint64
+sys_trace(void)
+{
+  int n;
+  struct proc *p = myproc();
+
+  argint(0, &n);
+  p->traced_mask = n;
+
+  return 0;
+}
+```
+
+### `kernel/proc.h`
+
+```c
+struct proc {
+  ...
+  // these are private to the process, so p->lock need not be held.
+  int traced_mask;             // syscall trace argument container 
+  ...
+};
+```
+
+### `kernel/proc.c`
+
+```c
+// Create a new process, copying the parent.
+// Sets up child kernel stack to return as if from fork() system call.
+int
+fork(void)
+{
+  ...
+  np->sz = p->sz;
+  // copy traced mask from parent to child
+  np->traced_mask = p->traced_mask;
+
+  // copy saved user registers.
+  *(np->trapframe) = *(p->trapframe);
+  ...
+}
+```
+
+### `user/user.h`
+
+```c
+// system calls
+...
+int uptime(void);
+int trace(int);
+```
+
+### `usys.pl`
+
+```c
+...
+entry("uptime");
+entry("trace");
+```
