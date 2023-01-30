@@ -2,9 +2,13 @@
 
 :penguin: **ALL ASSIGNMENTS HAVE PASSED THE TESTS** :white_check_mark:
 
+- [x] [Using gdb (easy)](#1-using-gdb-easy)
+- [x] [System call tracing (moderate)](#2-system-call-tracing-moderate)
+- [x] [Sysinfo (moderate)](#3-sysinfo-moderate)
+
 In this lab you will add some new system calls to xv6, which will help you understand how they work and will expose you to some of the internals of the xv6 kernel. Remember read Chapter 2 of [book-riscv-rev3](book-riscv-rev3.pdf) and Section 4.3 and 4.4 of Chapter 4 before start.
 
-## 1. Using gdb (easy)
+## [1. Using gdb (easy)](#lab2-system-calls)
 
 The guidance tells us to run `make qemu-gdb` in folder `xv6-labs-2022` and run `riscv64-unknown-elf-gdb` or `gdb-multiarch` in the same folder but using another terminal. Therefore, you need to install `riscv64-unknown-elf-gdb` first.
 
@@ -148,7 +152,7 @@ determining executable automatically.  Try using the "file" command.
     - `p p->name` prints `"initcode\000\000\000\000\000\000\000"`.
     - `p p->pid` prints `1`.
 
-## 2. System call tracing (moderate)
+## [2. System call tracing (moderate)](#lab2-system-calls)
 
 This assignment needs to add a system call tracing feature. The hints will guide you complete a majority of tasks.
 
@@ -276,7 +280,7 @@ entry("uptime");
 entry("trace");
 ```
 
-## 3. Sysinfo (moderate)
+## [3. Sysinfo (moderate)](#lab2-system-calls)
 
 The fundamental modifications applied for new syscall is similar to preceding assignment. One exception is that `get_freemem()` and `get_nproc()` declarations needs to be written into _kernel/defs.h_.
 
