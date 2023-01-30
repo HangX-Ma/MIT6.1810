@@ -2,9 +2,15 @@
 
 :penguin: **ALL ASSIGNMENTS HAVE PASSED THE TESTS** :white_check_mark:
 
+- [x] [sleep(easy)](#1-sleep-easy)
+- [x] [pingpong(easy)](#2-pingpong-easy)
+- [x] [primes (moderate)/(hard)](#3-primes-moderatehard)
+- [x] [find (moderate)](#4-find-moderate)
+- [x] [xargs (moderate)](#5-xargs-moderate)
+
 This lab will familiarize you with xv6 and its system calls.
 
-## 1. sleep (easy)
+## [1. sleep (easy)](#lab1-xv6-and-unix-utilities)
 
 Read the recommended files following the guide and you will benefits from them.
 Don't forget to find `UPROGS` and add your program at the bottom in `Makefile`.
@@ -33,7 +39,7 @@ main(int argc, char *argv[])
 }
 ```
 
-## 2. pingpong (easy)
+## [2. pingpong (easy)](#lab1-xv6-and-unix-utilities)
 
 _If no data is available, a `read` on a pipe will wait for either data to be written or for all file descriptors referring to the `write` end to be closed._ [page16, book-risc-rev3.pdf](book-riscv-rev3.pdf).
 
@@ -92,7 +98,7 @@ main(void)
 }
 ```
 
-## 3. primes (moderate)/(hard)
+## [3. primes (moderate)/(hard)](#lab1-xv6-and-unix-utilities)
 
 `read` and `write` syscall needs to coordinate with each other. I partially compile the code with `write` syscall only, leading to -1 returned code from `write`. I stuck in this error almost 1 hour!!!
 
@@ -184,7 +190,7 @@ main(void)
 }
 ```
 
-## 4. find (moderate)
+## [4. find (moderate)](#lab1-xv6-and-unix-utilities)
 
 Copy the main part of `ls` function in `user/ls.c`. If you fully understand the logic of `ls` function, it is easy for you to solve this problem.
 
@@ -279,7 +285,7 @@ main(int argc, char *argv[])
 }
 ```
 
-## 5. xargs (moderate)
+## [5. xargs (moderate)](#lab1-xv6-and-unix-utilities)
 
 _When `exec` succeeds, it does not return to the calling program. `exec` takes two arguments: the name of the file containing the executable and an array of string arguments._
 
