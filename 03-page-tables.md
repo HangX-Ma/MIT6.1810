@@ -3,8 +3,8 @@
 :penguin: **ALL ASSIGNMENTS HAVE PASSED THE TESTS** :white_check_mark:
 
 - [x] [Speed up system calls (easy)](#1-speed-up-system-calls-easy)
-- [ ] [Print a page table (easy)](#2-print-a-page-table-easy)
-- [ ] [Detect which pages have been accessed (hard)](#3-detect-which-pages-have-been-accessed-hard)
+- [x] [Print a page table (easy)](#2-print-a-page-table-easy)
+- [x] [Detect which pages have been accessed (hard)](#3-detect-which-pages-have-been-accessed-hard)
 
 In this lab you will explore page tables and modify them to speed up certain system calls and to detect which pages have been accessed.
 
@@ -195,3 +195,68 @@ init: starting sh
 - I think the third to last page ought to be the remaining part of the memory.
 
 ## [3. Detect which pages have been accessed (hard)](#lab3-page-tables)
+
+I think this task is easier for me. The hints will guide you to complete the assignment step by step.
+
+### 3.1 _kernel/sysproc.c_
+
+```c
+#ifdef LAB_PGTBL
+int
+sys_pgaccess(void)
+{
+  // lab pgtbl: your code here.
+  uint64 pg_va_u;
+  int pg_num_u;
+  uint64 abits_va_u;
+  unsigned int abits_mask;
+  struct proc *p = myproc();
+
+  argaddr(0, &pg_va_u);
+  argint(1, &pg_num_u);
+  argaddr(2, &abits_va_u);
+
+  /* page number upper limit */
+  if (pg_num_u > 32) {
+    return -1;
+  }
+
+  abits_mask = 0;
+  for (int i = 0; i < pg_num_u; i++) {
+    pte_t* pte = walk(p->pagetable, pg_va_u, 0);
+    if (pte == 0) {
+      return -1;
+    }
+    if((*pte & PTE_V) == 0) {
+      return -1;
+    }
+    if ((PTE_FLAGS(*pte) & PTE_A) != 0) {
+      *pte &= ~PTE_A;
+      abits_mask |= 1 << i;
+    }
+    pg_va_u += PGSIZE;
+  }
+  if (copyout(p->pagetable, abits_va_u, (char *)&abits_mask, sizeof(abits_mask)) < 0) {
+    return -1;
+  }
+  
+  return 0;
+}
+#endif
+```
+
+Read RISC-V privileged architecture manual, page 72. `PTE_A` bit locate at the sixth bit in Sv39 page table entry.
+
+![PTE_A](assert/03-pgtbl/PTE_A.png.png)
+
+### 3.2 _kernel/riscv.h_
+
+```c
+...
+#define PTE_V (1L << 0) // valid
+#define PTE_R (1L << 1)
+#define PTE_W (1L << 2)
+#define PTE_X (1L << 3)
+#define PTE_U (1L << 4) // user can access
+#define PTE_A (1L << 6) // page 72, RISC-V privileged architecture manual
+```

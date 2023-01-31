@@ -71,7 +71,7 @@ determining executable automatically.  Try using the "file" command.
 
 ### Answers
 
-1. Looking at the backtrace output, which function called syscall?
+1. **Looking at the backtrace output, which function called syscall?**
 
     ```shell
     (gdb) backtrace
@@ -82,7 +82,7 @@ determining executable automatically.  Try using the "file" command.
 
     `backtrace` will display the call stack for the currently selected thread. Stack follows the FILO rules so we can confirm that function `usertrap()` at `kernel/trap.c:67` called syscall.
 
-2. What is the value of p->trapframe->a7 and what does that value represent? (Hint: look user/initcode.S, the first user program xv6 starts.)
+2. **What is the value of `p->trapframe->a7` and what does that value represent? (Hint: look user/initcode.S, the first user program xv6 starts.)**
 
     ```shell
     $4 = {lock = {locked = 0x0, name = 0x80008178, cpu = 0x0}, state = 0x4,
@@ -115,7 +115,7 @@ determining executable automatically.  Try using the "file" command.
     0x87f740a0:     361700864190383365      7
     ```
 
-3. What was the previous mode that the CPU was in?
+3. **What was the previous mode that the CPU was in?**
 
     Check the reference book about RISC-V privileged instructions, at page 63.
 
@@ -129,7 +129,7 @@ determining executable automatically.  Try using the "file" command.
 
     SPP is the eighth bit in register _status_. So `0x22` indicates SPP is actually 0, demonstrating the fact that CPU previous mode is _user_ mode.
 
-4. Write down the assembly instruction the kernel is panicing at. Which register corresponds to the varialable `num`?
+4. **Write down the assembly instruction the kernel is panicing at. Which register corresponds to the varialable `num`?**
 
     ```shell
     scause 0x000000000000000d
@@ -141,13 +141,13 @@ determining executable automatically.  Try using the "file" command.
     - Instruction `kerneltrap`.
     - `num = * (int *) 0;` is translated to `lw a3,0(zero) # 0 <_entry-0x80000000>` in `kernel/kernel.asm`, where the kernel is panicing at. register `a3` corresponds to the variable `num`.
 
-5. Why does the kernel crash? Hint: look at figure 3-3 in the text; is address 0 mapped in the kernel address space? Is that confirmed by the value in `scause` above? (See description of `scause` in [RISC-V privileged instructions](https://pdos.csail.mit.edu/6.828/2022/labs/n//github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf))
+5. **Why does the kernel crash? Hint: look at figure 3-3 in the text; is address 0 mapped in the kernel address space? Is that confirmed by the value in `scause` above? (See description of `scause` in [RISC-V privileged instructions](https://pdos.csail.mit.edu/6.828/2022/labs/n//github.com/riscv/riscv-isa-manual/releases/download/Priv-v1.12/riscv-privileged-20211203.pdf))**
 
     - `lw` read a word from specific address and write it into the `rd(register destination)`. Visual address `0` is not an effective address so the kernel cannot translate.
     - Actually not, Figure 3.3 in [text book](book-riscv-rev3.pdf) has explained the _KERNELBASE_ start at 0x80000000.
     - The exception code is 13 **(Load page fault)**, which means the xv6 kernel cannot read the given address content. This `scause` value confirms our inference.
 
-6. What is the name of the binary that was running when the kernel paniced? What is its process id (pid)?
+6. **What is the name of the binary that was running when the kernel paniced? What is its process id (pid)?**
 
     - `p p->name` prints `"initcode\000\000\000\000\000\000\000"`.
     - `p p->pid` prints `1`.
