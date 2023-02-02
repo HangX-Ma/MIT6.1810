@@ -3,8 +3,8 @@
 :penguin: **ALL ASSIGNMENTS HAVE PASSED THE TESTS** :white_check_mark:
 
 - [x] [RISC-V assembly (easy)](#1-risc-v-assembly-easy)
-- [ ] [Backtrace (moderate)](#2-backtrace-moderate)
-- [ ] [Alarm (hard)](#3-alarm-hard)
+- [x] [Backtrace (moderate)](#2-backtrace-moderate)
+- [x] [Alarm (hard)](#3-alarm-hard)
 
 This lab explores how system calls are implemented using traps.
 
