@@ -12,8 +12,8 @@ This lab will familiarize you with xv6 and its system calls.
 
 ## [1. sleep (easy)](#lab1-xv6-and-unix-utilities)
 
-Read the recommended files following the guide and you will benefits from them.
-Don't forget to find `UPROGS` and add your program at the bottom in `Makefile`.
+Read the recommended code files following the guide and you will benefits from them.
+Don't forget to add your program under `UPROGS` in `Makefile`.
 
 ### _user/sleep.c_
 
