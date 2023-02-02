@@ -8,7 +8,7 @@ Virtual memory provides a level of indirection: the kernel can intercept memory 
 
 ## [Implement copy-on-write fork(hard)](#lab5-copy-on-write-fork-for-xv6)
 
-According to the definition of copy-on-write, we need to use a reserved bit to indicate COW page, so modify the _kernel/riscv.h_ is to write your own PTE bit'a alias.
+According to the definition of copy-on-write, we need to use a reserved bit to indicate COW page. Modify _kernel/riscv.h_ to write your own PTE bit alias.
 
 ### _kernel/riscv.h_
 
