@@ -9,3 +9,4 @@ This repository contains lab solutions of MIT 6.1810, Operating System Engineeri
 - [x] [Lab: Copy-on-Write Fork for xv6](05-cow.md)
 - [x] [Lab: Multithreading](06-thread.md)
 - [x] [Lab: Networking](07-net.md)
+- [x] [Lab: locks](08-lock.md)
