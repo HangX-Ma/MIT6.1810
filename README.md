@@ -2,6 +2,8 @@
 
 This repository contains lab solutions of MIT 6.1810, Operating System Engineering.Analysis and resolutions can be found from notes below.
 
+> Note: Solutions can be found in [share](./share) folder, you can download `xv6-labs-202x.tar.xz` package and try.
+
 - [x] [Lab: Xv6 and Unix utilities](01-util.md)
 - [x] [Lab: system calls](02-syscall.md)
 - [x] [Lab: page tables](03-pgtbl.md)
@@ -13,3 +15,6 @@ This repository contains lab solutions of MIT 6.1810, Operating System Engineeri
 - [x] [Lab: file system](09-fs.md)
 - [x] [Lab: mmap](10-mmap.md)
 - [x] [Lab: xv6 lazy page allocation(2020)](11-lazy.md)
+
+## LICENSE
+MIT License
