@@ -16,5 +16,5 @@ This repository contains lab solutions of MIT 6.1810, Operating System Engineeri
 - [x] [Lab: mmap](10-mmap.md)
 - [x] [Lab: xv6 lazy page allocation(2020)](11-lazy.md)
 
-## LICENSE
+## License
 MIT License
