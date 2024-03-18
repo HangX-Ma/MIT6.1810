@@ -33,6 +33,14 @@ struct proc {
 
 ### _kernel/sysfile.c_
 
+Add `sys_mmap` and `sys_munmap` system calls. We need to design a memory mapping strategy that doesn't conflict with other user space address. We can map the **VMA(Virtual Memory Area)** from top of the process user address space.
+
+So we define `vaend = MAXVA - 2 * PGSIZE` to avoid override of pages **trampoline** and **trapframe**. The down-growth mapping area has low probability to encounter with the up-growth heap.
+
+For convenience, I always map the areas starting from aligned address with the integer multiple of the pages.
+
+![figure 3.4](assert/10-mmap/xv6-user_address_space.png)
+
 ```c
 uint64
 sys_mmap(void)
@@ -106,6 +114,9 @@ sys_munmap(void)
     return -1;
   }
 
+  addr = PGROUNDDOWN(addr);
+  length = PGROUNDUP(length);
+
   struct proc *p = myproc();
   struct vma *v = 0;
   for (int i = 0; i < NVMA; i++) {
@@ -122,21 +133,16 @@ sys_munmap(void)
     return -1; // hole
   }
 
-  uint64 addr_aligned = addr;
-  if(addr > v->addr) {
-    addr_aligned = PGROUNDUP(addr);
+  if (addr != v->addr) {
+    return -1;
   }
 
-  int nunmap = length - (addr_aligned - addr); // nbytes to unmap
-  if(nunmap < 0)
-    nunmap = 0;
-
-  vmaunmap(p->pagetable, addr_aligned, nunmap, v); // custom memory page unmap routine for mmapped pages.
-  if(addr <= v->addr && addr + length > v->addr) { // unmap at the beginning
-    v->off += addr + length - v->addr;
-    v->addr = addr + length;
-  }
+  v->addr += length;
   v->length -= length;
+  if(v->flags & MAP_SHARED) {
+    filewrite(v->f, addr, length);
+  }
+  uvmunmap(p->pagetable, addr, length / PGSIZE, 1);
 
   if(v->length <= 0) {
     fileclose(v->f);
@@ -183,6 +189,8 @@ vmalazy(uint64 va) {
 
 ### _kernel/trap.c_
 
+We use lazy allocation strategy to manage the memory. Only when we need the page, will the page fault call `vmalazy` function to read data according to file inode from the cache buffer or the disk. After that, we build page mapping from virtual memory to physical memory.
+
 ```c
 void
 usertrap(void)
@@ -208,44 +216,55 @@ out:
 ### _kernel/vm.c_
 
 ```c
-
-// Remove n BYTES (not pages) of vma mappings starting from va. va must be
-// page-aligned. The mappings NEED NOT exist.
-// Also free the physical memory and write back vma data to disk if necessary.
+// Remove npages of mappings starting from va. va must be
+// page-aligned. The mappings must exist.
+// Optionally free the physical memory.
 void
-vmaunmap(pagetable_t pagetable, uint64 va, uint64 nbytes, struct vma *v)
+uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
 {
   uint64 a;
   pte_t *pte;
 
-  // printf("unmapping %d bytes from %p\n",nbytes, va);
+  if((va % PGSIZE) != 0)
+    panic("uvmunmap: not aligned");
 
-  // borrowed from "uvmunmap"
-  for(a = va; a < va + nbytes; a += PGSIZE){
+  for(a = va; a < va + npages*PGSIZE; a += PGSIZE){
     if((pte = walk(pagetable, a, 0)) == 0)
-      panic("sys_munmap: walk");
-    if(PTE_FLAGS(*pte) == PTE_V)
-      panic("sys_munmap: not a leaf");
-    if(*pte & PTE_V){
-      uint64 pa = PTE2PA(*pte);
-      if((*pte & PTE_D) && (v->flags & MAP_SHARED)) { // dirty, need to write back to disk
-        begin_op();
-        ilock(v->f->ip);
-        uint64 aoff = a - v->addr; // offset relative to the start of memory range
-        if(aoff < 0) { // if the first page is not a full 4k page
-          writei(v->f->ip, 0, pa + (-aoff), v->off, PGSIZE + aoff);
-        } else if(aoff + PGSIZE > v->length){  // if the last page is not a full 4k page
-          writei(v->f->ip, 0, pa, v->off + aoff, v->length - aoff);
-        } else { // full 4k pages
-          writei(v->f->ip, 0, pa, v->off + aoff, PGSIZE);
-        }
-        iunlock(v->f->ip);
-        end_op();
-      }
-      kfree((void*)pa);
-      *pte = 0;
-    }
+      panic("uvmunmap: walk");
+    if((*pte & PTE_V) == 0)
+      // panic("uvmunmap: not mapped");
+      continue;
+    ...
   }
+}
+
+// Given a parent process's page table, copy
+// its memory into a child's page table.
+// Copies both the page table and the
+// physical memory.
+// returns 0 on success, -1 on failure.
+// frees any allocated pages on failure.
+int
+uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
+{
+  pte_t *pte;
+  uint64 pa, i;
+  uint flags;
+  char *mem;
+
+  for(i = 0; i < sz; i += PGSIZE){
+    if((pte = walk(old, i, 0)) == 0)
+      panic("uvmcopy: pte should exist");
+    if((*pte & PTE_V) == 0)
+      // panic("uvmcopy: page not present");
+      continue;
+    ...
+  }
+  return 0;
+
+ err:
+  uvmunmap(new, 0, i / PGSIZE, 1);
+  return -1;
 }
 ```
 
@@ -264,37 +283,50 @@ allocproc(void)
 }
 
 
-static void
-freeproc(struct proc *p)
-{
-  if(p->trapframe)
-    kfree((void*)p->trapframe);
-  p->trapframe = 0;
-  for(int i = 0; i < NVMA; i++) {
-    struct vma *v = &p->vma[i];
-    vmaunmap(p->pagetable, v->addr, v->length, v);
-  }
-  ...
-}
 
+// Create a new process, copying the parent.
+// Sets up child kernel stack to return as if from fork() system call.
 int
 fork(void)
 {
   ...
-  // increment reference counts on open file descriptors.
-  for(i = 0; i < NOFILE; i++)
-    if(p->ofile[i])
-      np->ofile[i] = filedup(p->ofile[i]);
-  np->cwd = idup(p->cwd);
-
+  acquire(&np->lock);
+  np->state = RUNNABLE;
   // copy vmas created by mmap.
   // actual memory page as well as pte will not be copied over.
-  for(i = 0; i < NVMA; i++) {
-    struct vma *v = &p->vma[i];
-    if(v->valid) {
-      np->vma[i] = *v;
-      filedup(v->f);
+  for(int i=0; i < NVMA; i++) {
+    memmove(&np->vma[i], &p->vma[i], sizeof(p->vma[i]));
+    if(p->vma[i].f)
+      filedup(p->vma[i].f);
+  }
+  release(&np->lock);
+
+
+  return pid;
+}
+
+// Exit the current process.  Does not return.
+// An exited process remains in the zombie state
+// until its parent calls wait().
+void
+exit(int status)
+{
+  struct proc *p = myproc();
+
+  if(p == initproc)
+    panic("init exiting");
+
+  // Close all open files.
+  for(int fd = 0; fd < NOFILE; fd++){
+    if(p->ofile[fd]){
+      struct file *f = p->ofile[fd];
+      fileclose(f);
+      p->ofile[fd] = 0;
     }
+  }
+
+  for(int i=0; i < NVMA; i++) {
+    uvmunmap(p->pagetable, p->vma[i].addr, p->vma[i].length / PGSIZE, 1);
   }
   ...
 }
